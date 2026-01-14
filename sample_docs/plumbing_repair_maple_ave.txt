@@ -1,0 +1,36 @@
+ABC PLUMBING & REPAIR
+Service Invoice
+
+Invoice Number: PLB-2024-3345
+Service Date: February 22, 2024
+
+Customer: Woodcrest Capital Management
+Service Location: 456 Maple Avenue, Springfield
+
+Description of Work:
+- Repaired leaking kitchen faucet
+- Replaced worn washers and O-rings
+- Cleared slow-draining bathroom sink
+- Inspected all visible plumbing connections
+- No leaks detected after repairs
+
+Materials:
+Faucet Repair Kit: $35.00
+Drain Cleaning Solution: $18.00
+Misc. Hardware: $12.50
+
+Labor:
+Service Time: 2.5 hours @ $110/hour: $275.00
+
+SUBTOTAL: $340.50
+Sales Tax (8%): $27.24
+TOTAL: $367.74
+
+Amount Paid: $0.00
+BALANCE DUE: $367.74
+
+Payment Due: March 23, 2024
+
+ABC Plumbing & Repair
+Licensed & Insured - License #PL-9954
+24/7 Emergency Service: (555) 987-6543

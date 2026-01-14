@@ -1,0 +1,32 @@
+SUPERIOR HVAC SERVICES
+Invoice
+
+Invoice #: HVAC-2024-1087
+Date: January 15, 2024
+
+Bill To:
+Woodcrest Capital Management
+Property: 123 Oak Street, Springfield
+
+Service Description:
+Emergency furnace repair - heating unit not working
+Replaced faulty ignition control module
+Cleaned and inspected entire HVAC system
+Tested all safety controls
+
+Labor (3 hours @ $95/hr): $285.00
+Parts - Ignition Module: $245.00
+Service Call Fee: $75.00
+Emergency After-Hours Surcharge: $50.00
+
+SUBTOTAL: $655.00
+Tax (8%): $52.40
+TOTAL DUE: $707.40
+
+Payment Terms: Net 30 days
+Payment Due: February 14, 2024
+
+Thank you for your business!
+Superior HVAC Services
+Phone: (555) 123-4567
+License #: HVAC-8847-IL

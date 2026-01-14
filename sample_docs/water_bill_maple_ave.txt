@@ -1,0 +1,23 @@
+CITY WATER DEPARTMENT
+Water & Sewer Bill
+
+Property: 456 Maple Avenue, Springfield
+Account Number: WS-77294-2024
+Billing Date: February 28, 2024
+
+Service Period: February 1 - February 29, 2024
+
+Water Usage: 8,500 gallons
+Sewer Charges: Based on water consumption
+
+CHARGES:
+Water Service: $145.00
+Sewer Service: $98.50
+Stormwater Fee: $12.00
+Environmental Fee: $5.50
+
+TOTAL AMOUNT DUE: $261.00
+Due Date: March 20, 2024
+
+Please make checks payable to: City Water Department
+Payment Address: P.O. Box 5500, Springfield, 62701
