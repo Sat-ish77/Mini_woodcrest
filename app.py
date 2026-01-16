@@ -195,6 +195,10 @@ def upload_documents_section():
                             if "error" in result:
                                 st.error(f"❌ Error processing {uploaded_file.name}: {result['error']}")
                                 error_count += 1
+                            elif not result.get("property_name") and not result.get("document_type") and not result.get("vendor"):
+                                # Metadata extraction likely failed - show warning
+                                st.warning(f"⚠️ {uploaded_file.name} uploaded but metadata extraction may have failed. Check logs for details.")
+                                # Still save it - might be a parsing issue
                             else:
                                 # Save to database
                                 try:

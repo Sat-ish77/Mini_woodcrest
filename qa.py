@@ -13,7 +13,15 @@ from ingest import create_embedding
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Lazy initialization - only create client when needed
+_client = None
+
+def get_openai_client():
+    """Get OpenAI client (lazy initialization)"""
+    global _client
+    if _client is None:
+        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _client
 
 
 def answer_question(question: str, user_id: str) -> Dict:
@@ -147,6 +155,7 @@ Please answer the question using ONLY the information above. If the answer is no
     # Step 6: Generate answer using GPT
     print("Generating answer...")
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[

@@ -10,13 +10,23 @@ from dotenv import load_dotenv
 from typing import Dict, Optional, List, Tuple
 import json
 from datetime import datetime
-import PyPDF2
 import re
+# PyPDF2 imported lazily - only when processing PDFs
 
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Lazy initialization - only create client when needed
+_client = None
+
+def get_openai_client():
+    """Get OpenAI client (lazy initialization)"""
+    global _client
+    if _client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found in environment variables. Check your Streamlit Cloud secrets.")
+        _client = OpenAI(api_key=api_key)
+    return _client
 
 
 def extract_text_from_file(file_path: str) -> str:
@@ -59,6 +69,8 @@ def extract_text_from_pdf(file_path: str) -> str:
         Extracted text
     """
     try:
+        # Lazy import PyPDF2 - only load when actually processing PDFs
+        import PyPDF2
         with open(file_path, 'rb') as f:
             pdf_reader = PyPDF2.PdfReader(f)
             text = ""
@@ -186,6 +198,12 @@ Respond ONLY with valid JSON in this exact format (no markdown, no explanations)
 """
     
     try:
+        # Check if API key is available
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found. Check Streamlit Cloud secrets configuration.")
+        
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -242,6 +260,9 @@ Respond ONLY with valid JSON in this exact format (no markdown, no explanations)
         }
     except Exception as e:
         print(f"Error extracting metadata: {e}")
+        import traceback
+        traceback.print_exc()  # Print full traceback for debugging
+        # Return empty metadata on error
         return {
             "property_name": None,
             "document_type": None,
@@ -359,6 +380,7 @@ def create_embedding(text: str) -> Optional[List[float]]:
         if len(text) > max_chars:
             text = text[:max_chars]
         
+        client = get_openai_client()
         response = client.embeddings.create(
             model="text-embedding-3-small",
             input=text
@@ -403,7 +425,10 @@ def process_document(file_path: str, filename: str) -> Dict:
     
     # Step 2: Extract metadata using AI
     metadata = extract_metadata_with_ai(text, filename)
-    print(f"  [OK] Extracted metadata: {metadata.get('document_type', 'unknown')}")
+    if metadata.get("property_name") or metadata.get("document_type") or metadata.get("vendor"):
+        print(f"  [OK] Extracted metadata: {metadata.get('document_type', 'unknown')}")
+    else:
+        print(f"  [WARNING] Metadata extraction returned empty values - check OpenAI API key and logs")
     
     # Step 3: Chunk the text
     chunks = chunk_text(text, chunk_size=500, overlap=50)

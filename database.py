@@ -4,10 +4,13 @@ Handles all database operations with Supabase - using authenticated sessions
 """
 
 import os
-from supabase import create_client, Client
 from dotenv import load_dotenv
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 from datetime import datetime
+
+# Lazy import Supabase - only load when actually needed
+if TYPE_CHECKING:
+    from supabase import Client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,26 +24,36 @@ os.environ.pop('http_proxy', None)
 os.environ.pop('https_proxy', None)
 os.environ.pop('all_proxy', None)
 
-# Get Supabase credentials from environment
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# Lazy load credentials - only validate when client is actually needed
+SUPABASE_URL = None
+SUPABASE_KEY = None
 
-# Validate that credentials are loaded
-if not SUPABASE_URL:
-    raise ValueError("SUPABASE_URL not found in environment variables. Please check your .env file.")
-if not SUPABASE_KEY:
-    raise ValueError("SUPABASE_KEY not found in environment variables. Please check your .env file.")
-
-# Strip any whitespace from keys
-SUPABASE_URL = SUPABASE_URL.strip()
-SUPABASE_KEY = SUPABASE_KEY.strip()
+def _get_supabase_credentials():
+    """Lazy load and validate Supabase credentials"""
+    global SUPABASE_URL, SUPABASE_KEY
+    
+    if SUPABASE_URL is None or SUPABASE_KEY is None:
+        SUPABASE_URL = os.getenv("SUPABASE_URL")
+        SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+        
+        # Validate that credentials are loaded
+        if not SUPABASE_URL:
+            raise ValueError("SUPABASE_URL not found in environment variables. Please check your .env file.")
+        if not SUPABASE_KEY:
+            raise ValueError("SUPABASE_KEY not found in environment variables. Please check your .env file.")
+        
+        # Strip any whitespace from keys
+        SUPABASE_URL = SUPABASE_URL.strip()
+        SUPABASE_KEY = SUPABASE_KEY.strip()
+    
+    return SUPABASE_URL, SUPABASE_KEY
 
 # Create base Supabase client (will be enhanced with auth per request)
 # Using lazy initialization to avoid import-time errors
-_supabase_client: Optional[Client] = None
+_supabase_client: Optional['Client'] = None
 
 
-def get_supabase_client() -> Client:
+def get_supabase_client() -> 'Client':
     """
     Returns the base Supabase client instance
     Note: For authenticated operations, use get_authenticated_client from auth.py
@@ -49,19 +62,26 @@ def get_supabase_client() -> Client:
     
     if _supabase_client is None:
         try:
+            # Lazy import Supabase - only load when actually needed
+            from supabase import create_client
+            
+            # Lazy load credentials
+            url, key = _get_supabase_credentials()
+            
             # Validate URL format
-            if not SUPABASE_URL.startswith('http'):
-                raise ValueError(f"Invalid SUPABASE_URL format: {SUPABASE_URL}. Should start with https://")
+            if not url.startswith('http'):
+                raise ValueError(f"Invalid SUPABASE_URL format: {url}. Should start with https://")
             
             # Validate key format - Supabase keys should be JWT tokens (start with eyJ) or publishable keys
-            if not SUPABASE_KEY or len(SUPABASE_KEY) < 20:
+            if not key or len(key) < 20:
                 raise ValueError(f"Invalid SUPABASE_KEY format: Key is too short or empty")
             
-            _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            _supabase_client = create_client(url, key)
         except Exception as e:
+            url, key = _get_supabase_credentials()
             error_msg = f"Failed to create Supabase client: {str(e)}\n"
-            error_msg += f"URL: {SUPABASE_URL}\n"
-            error_msg += f"Key starts with: {SUPABASE_KEY[:20]}...\n"
+            error_msg += f"URL: {url}\n"
+            error_msg += f"Key starts with: {key[:20]}...\n"
             error_msg += "\nPlease verify:\n"
             error_msg += "1. Your Supabase project is active\n"
             error_msg += "2. You're using the 'anon public' key (JWT format, starts with 'eyJ...')\n"
@@ -128,23 +148,29 @@ def save_document(
         
         document_id = doc_response.data[0]["id"]
         
-        # Step 2: Save chunks if provided
+        # Step 2: Save chunks if provided (optional - won't break if table doesn't exist)
         if chunks and len(chunks) > 0:
-            chunk_records = []
-            for chunk in chunks:
-                chunk_records.append({
-                    "document_id": document_id,
-                    "user_id": user_id,
-                    "chunk_index": chunk.get("chunk_index", 0),
-                    "chunk_text": chunk.get("text", ""),
-                    "embedding": chunk.get("embedding"),
-                    "start_char": chunk.get("start_char", 0)
-                })
-            
-            # Insert chunks in batch
-            if chunk_records:
-                chunks_response = supabase.table("document_chunks").insert(chunk_records).execute()
-                print(f"Saved {len(chunk_records)} chunks for document {document_id}")
+            try:
+                chunk_records = []
+                for chunk in chunks:
+                    chunk_records.append({
+                        "document_id": document_id,
+                        "user_id": user_id,
+                        "chunk_index": chunk.get("chunk_index", 0),
+                        "chunk_text": chunk.get("text", ""),
+                        "embedding": chunk.get("embedding"),
+                        "start_char": chunk.get("start_char", 0)
+                    })
+                
+                # Insert chunks in batch
+                if chunk_records:
+                    chunks_response = supabase.table("document_chunks").insert(chunk_records).execute()
+                    print(f"Saved {len(chunk_records)} chunks for document {document_id}")
+            except Exception as chunk_error:
+                # Chunks table might not exist yet - that's okay, document is still saved
+                print(f"Warning: Could not save chunks (table might not exist): {chunk_error}")
+                print("Document saved successfully, but chunks were not saved.")
+                print("Run the ADD_CHUNKS_TABLE.sql in Supabase to enable chunking.")
         
         return doc_response.data[0]
             
